@@ -34,7 +34,7 @@
         "@angular-devkit/build-angular": "^20",
         "@angular/cli": "^20",
         "@angular/compiler-cli": "^20",
-        "@types/jasmine": "~5.1.0",
+        "@types/jasmine": "~5.1.12",
         "autoprefixer": "^10.4.20",
         "eslint": "^9.30.1",
         "eslint-config-prettier": "^10.1.5",
