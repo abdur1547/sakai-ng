@@ -3,6 +3,20 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+type ApiSuccessResponse<T> = {
+  data: T;
+  success: true;
+  status: number;
+};
+
+type ApiErrorResponse = {
+  errors: string[];
+  success: false;
+  status: number;
+};
+
+type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+
 @Injectable({
   providedIn: 'root',
 })
