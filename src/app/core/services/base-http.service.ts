@@ -1,7 +1,8 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 
 type ApiSuccessResponse<T> = {
   data: T;
@@ -21,39 +22,76 @@ type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
   providedIn: 'root',
 })
 export class BaseHttpService {
-  constructor(protected http: HttpClient) {}
+  private http: HttpClient = inject(HttpClient);
+  private baseApiUrl:string = environment.apiUrl;
 
-  protected get<T>(url: string, params?: HttpParams, headers?: HttpHeaders): Observable<T> {
-    return this.http.get<T>(url, { params, headers }).pipe(
+  protected get<T>(endpoint: string, params?: HttpParams, headers?: HttpHeaders): Observable<T> {
+    return this.http.get<ApiResponse<T>>(this.buildUrl(endpoint), { params, headers }).pipe(
+      this.handleResponse(),
       catchError(this.handleError)
     );
   }
 
-  protected post<T>(url: string, body: any, headers?: HttpHeaders): Observable<T> {
-    return this.http.post<T>(url, body, { headers }).pipe(
+  protected post<T>(endpoint: string, body: any, headers?: HttpHeaders): Observable<T> {
+    return this.http.post<ApiResponse<T>>(this.buildUrl(endpoint), body, { headers }).pipe(
+      this.handleResponse(),
       catchError(this.handleError)
     );
   }
 
-  protected put<T>(url: string, body: any, headers?: HttpHeaders): Observable<T> {
-    return this.http.put<T>(url, body, { headers }).pipe(
+  protected put<T>(endpoint: string, body: any, headers?: HttpHeaders): Observable<T> {
+    return this.http.put<ApiResponse<T>>(this.buildUrl(endpoint), body, { headers }).pipe(
+      this.handleResponse(),
       catchError(this.handleError)
     );
   }
 
-  protected delete<T>(url: string, headers?: HttpHeaders): Observable<T> {
-    return this.http.delete<T>(url, { headers }).pipe(
+  protected delete<T>(endpoint: string, headers?: HttpHeaders): Observable<T> {
+    return this.http.delete<ApiResponse<T>>(this.buildUrl(endpoint), { headers }).pipe(
+      this.handleResponse(),
       catchError(this.handleError)
     );
+  }
+
+  private handleResponse<T>() {
+    return (source: Observable<ApiResponse<T>>) =>
+      new Observable<T>(observer => {
+        return source.subscribe({
+          next: (response: ApiResponse<T>) => {
+            if (response.success) {
+              observer.next(this.extractData(response));
+              observer.complete();
+            } else {
+              observer.error(response.errors);
+            }
+          },
+          error: (error) => observer.error(error),
+          complete: () => observer.complete()
+        });
+      });
   }
 
   private handleError(error: HttpErrorResponse) {
-    let errorMsg = 'An unknown error occurred!';
+    let errorMsg: string[] = ['An unknown error occurred!'];
+    
     if (error.error instanceof ErrorEvent) {
-      errorMsg = `Error: ${error.error.message}`;
+      errorMsg = [`Error: ${error.error.message}`];
+    } else if (error.error instanceof Array) {
+      errorMsg = error.error;
+    } else if (error.error?.errors) {
+      errorMsg = error.error.errors;
     } else {
-      errorMsg = `Error Code: ${error.status}\nMessage: ${error.message}`;
+      errorMsg = [`Error Code: ${error.status}, Message: ${error.message}`];
     }
-    return throwError(() => new Error(errorMsg));
+    
+    return throwError(() => errorMsg);
+  }
+
+  private extractData<T>(response: ApiSuccessResponse<T>): T {
+    return response.data;
+  }
+
+  private buildUrl(endpoint: string): string {
+    return `${this.baseApiUrl}/${endpoint}`;
   }
 }
