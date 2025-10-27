@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
 type ApiSuccessResponse<T> = {
@@ -54,21 +54,14 @@ export class BaseHttpService {
   }
 
   private handleResponse<T>() {
-    return (source: Observable<ApiResponse<T>>) =>
-      new Observable<T>(observer => {
-        return source.subscribe({
-          next: (response: ApiResponse<T>) => {
-            if (response.success) {
-              observer.next(this.extractData(response));
-              observer.complete();
-            } else {
-              observer.error(response.errors);
-            }
-          },
-          error: (error) => observer.error(error),
-          complete: () => observer.complete()
-        });
-      });
+    return (source: Observable<ApiResponse<T>>) => source.pipe(
+      map(response => {
+        if (response.success) {
+          return this.extractData(response);
+        }
+        throw response.errors;
+      })
+    );
   }
 
   private handleError(error: HttpErrorResponse) {
