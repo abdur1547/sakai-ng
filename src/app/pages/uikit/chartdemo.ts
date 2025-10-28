@@ -1,7 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, signal, effect, OnDestroy } from '@angular/core';
 import { ChartModule } from 'primeng/chart';
 import { FluidModule } from 'primeng/fluid';
-import { debounceTime, Subscription } from 'rxjs';
 import { LayoutService } from '../../layout/service/layout.service';
 
 @Component({
@@ -13,66 +12,59 @@ import { LayoutService } from '../../layout/service/layout.service';
       <div class="col-span-12 xl:col-span-6">
         <div class="card">
           <div class="font-semibold text-xl mb-4">Linear</div>
-          <p-chart type="line" [data]="lineData" [options]="lineOptions"></p-chart>
+          <p-chart type="line" [data]="lineData()" [options]="lineOptions()"></p-chart>
         </div>
       </div>
       <div class="col-span-12 xl:col-span-6">
         <div class="card">
           <div class="font-semibold text-xl mb-4">Bar</div>
-          <p-chart type="bar" [data]="barData" [options]="barOptions"></p-chart>
+          <p-chart type="bar" [data]="barData()" [options]="barOptions()"></p-chart>
         </div>
       </div>
       <div class="col-span-12 xl:col-span-6">
         <div class="card flex flex-col items-center">
           <div class="font-semibold text-xl mb-4">Pie</div>
-          <p-chart type="pie" [data]="pieData" [options]="pieOptions"></p-chart>
+          <p-chart type="pie" [data]="pieData()" [options]="pieOptions()"></p-chart>
         </div>
       </div>
       <div class="col-span-12 xl:col-span-6">
         <div class="card flex flex-col items-center">
           <div class="font-semibold text-xl mb-4">Doughnut</div>
-          <p-chart type="doughnut" [data]="pieData" [options]="pieOptions"></p-chart>
+          <p-chart type="doughnut" [data]="pieData()" [options]="pieOptions()"></p-chart>
         </div>
       </div>
       <div class="col-span-12 xl:col-span-6">
         <div class="card flex flex-col items-center">
           <div class="font-semibold text-xl mb-4">Polar Area</div>
-          <p-chart type="polarArea" [data]="polarData" [options]="polarOptions"></p-chart>
+          <p-chart type="polarArea" [data]="polarData()" [options]="polarOptions()"></p-chart>
         </div>
       </div>
       <div class="col-span-12 xl:col-span-6">
         <div class="card flex flex-col items-center">
           <div class="font-semibold text-xl mb-4">Radar</div>
-          <p-chart type="radar" [data]="radarData" [options]="radarOptions"></p-chart>
+          <p-chart type="radar" [data]="radarData()" [options]="radarOptions()"></p-chart>
         </div>
       </div>
     </p-fluid>
   `
 })
-export class ChartDemo {
-  lineData: any;
+export class ChartDemo implements OnDestroy {
+  lineData = signal<any>(null);
+  barData = signal<any>(null);
+  pieData = signal<any>(null);
+  polarData = signal<any>(null);
+  radarData = signal<any>(null);
+  lineOptions = signal<any>(null);
+  barOptions = signal<any>(null);
+  pieOptions = signal<any>(null);
+  polarOptions = signal<any>(null);
+  radarOptions = signal<any>(null);
 
-  barData: any;
-
-  pieData: any;
-
-  polarData: any;
-
-  radarData: any;
-
-  lineOptions: any;
-
-  barOptions: any;
-
-  pieOptions: any;
-
-  polarOptions: any;
-
-  radarOptions: any;
-
-  subscription: Subscription;
   constructor(private layoutService: LayoutService) {
-    this.subscription = this.layoutService.configUpdate$.pipe(debounceTime(25)).subscribe(() => {
+    // Use effect to reactively update charts when layout configuration changes
+    effect(() => {
+      // Access the layout config signal to trigger the effect
+      this.layoutService.layoutConfig();
       this.initCharts();
     });
   }
@@ -81,13 +73,17 @@ export class ChartDemo {
     this.initCharts();
   }
 
+  ngOnDestroy() {
+    // No need for manual subscription cleanup with signals
+  }
+
   initCharts() {
     const documentStyle = getComputedStyle(document.documentElement);
     const textColor = documentStyle.getPropertyValue('--text-color');
     const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary');
     const surfaceBorder = documentStyle.getPropertyValue('--surface-border');
 
-    this.barData = {
+    this.barData.set({
       labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
       datasets: [
         {
@@ -103,9 +99,9 @@ export class ChartDemo {
           data: [28, 48, 40, 19, 86, 27, 90]
         }
       ]
-    };
+    });
 
-    this.barOptions = {
+    this.barOptions.set({
       maintainAspectRatio: false,
       aspectRatio: 0.8,
       plugins: {
@@ -138,9 +134,9 @@ export class ChartDemo {
           }
         }
       }
-    };
+    });
 
-    this.pieData = {
+    this.pieData.set({
       labels: ['A', 'B', 'C'],
       datasets: [
         {
@@ -149,9 +145,9 @@ export class ChartDemo {
           hoverBackgroundColor: [documentStyle.getPropertyValue('--p-indigo-400'), documentStyle.getPropertyValue('--p-purple-400'), documentStyle.getPropertyValue('--p-teal-400')]
         }
       ]
-    };
+    });
 
-    this.pieOptions = {
+    this.pieOptions.set({
       plugins: {
         legend: {
           labels: {
@@ -160,9 +156,9 @@ export class ChartDemo {
           }
         }
       }
-    };
+    });
 
-    this.lineData = {
+    this.lineData.set({
       labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
       datasets: [
         {
@@ -182,9 +178,9 @@ export class ChartDemo {
           tension: 0.4
         }
       ]
-    };
+    });
 
-    this.lineOptions = {
+    this.lineOptions.set({
       maintainAspectRatio: false,
       aspectRatio: 0.8,
       plugins: {
@@ -214,9 +210,9 @@ export class ChartDemo {
           }
         }
       }
-    };
+    });
 
-    this.polarData = {
+    this.polarData.set({
       datasets: [
         {
           data: [11, 16, 7, 3],
@@ -225,9 +221,9 @@ export class ChartDemo {
         }
       ],
       labels: ['Indigo', 'Purple', 'Teal', 'Orange']
-    };
+    });
 
-    this.polarOptions = {
+    this.polarOptions.set({
       plugins: {
         legend: {
           labels: {
@@ -246,9 +242,9 @@ export class ChartDemo {
           }
         }
       }
-    };
+    });
 
-    this.radarData = {
+    this.radarData.set({
       labels: ['Eating', 'Drinking', 'Sleeping', 'Designing', 'Coding', 'Cycling', 'Running'],
       datasets: [
         {
@@ -270,9 +266,9 @@ export class ChartDemo {
           data: [28, 48, 40, 19, 96, 27, 100]
         }
       ]
-    };
+    });
 
-    this.radarOptions = {
+    this.radarOptions.set({
       plugins: {
         legend: {
           labels: {
@@ -290,12 +286,6 @@ export class ChartDemo {
           }
         }
       }
-    };
-  }
-
-  ngOnDestroy() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
+    });
   }
 }

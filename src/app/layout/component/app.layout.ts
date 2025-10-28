@@ -1,7 +1,7 @@
-import { Component, Renderer2, ViewChild } from '@angular/core';
+import { Component, Renderer2, ViewChild, effect, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
-import { filter, Subscription } from 'rxjs';
+import { filter } from 'rxjs';
 import { AppTopbar } from './app.topbar';
 import { AppSidebar } from './app.sidebar';
 import { AppFooter } from './app.footer';
@@ -23,9 +23,7 @@ import { LayoutService } from '../service/layout.service';
     <div class="layout-mask animate-fadein"></div>
   </div> `
 })
-export class AppLayout {
-  overlayMenuOpenSubscription: Subscription;
-
+export class AppLayout implements OnDestroy {
   menuOutsideClickListener: any;
 
   @ViewChild(AppSidebar) appSidebar!: AppSidebar;
@@ -37,20 +35,26 @@ export class AppLayout {
     public renderer: Renderer2,
     public router: Router
   ) {
-    this.overlayMenuOpenSubscription = this.layoutService.overlayOpen$.subscribe(() => {
-      if (!this.menuOutsideClickListener) {
-        this.menuOutsideClickListener = this.renderer.listen('document', 'click', (event) => {
-          if (this.isOutsideClicked(event)) {
-            this.hideMenu();
-          }
-        });
-      }
+    // Use effect to reactively respond to layout state changes
+    effect(() => {
+      const layoutState = this.layoutService.layoutState();
 
-      if (this.layoutService.layoutState().staticMenuMobileActive) {
-        this.blockBodyScroll();
+      if (layoutState.overlayMenuActive) {
+        if (!this.menuOutsideClickListener) {
+          this.menuOutsideClickListener = this.renderer.listen('document', 'click', (event) => {
+            if (this.isOutsideClicked(event)) {
+              this.hideMenu();
+            }
+          });
+        }
+
+        if (layoutState.staticMenuMobileActive) {
+          this.blockBodyScroll();
+        }
       }
     });
 
+    // Handle router navigation to hide menu
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       this.hideMenu();
     });
@@ -100,10 +104,6 @@ export class AppLayout {
   }
 
   ngOnDestroy() {
-    if (this.overlayMenuOpenSubscription) {
-      this.overlayMenuOpenSubscription.unsubscribe();
-    }
-
     if (this.menuOutsideClickListener) {
       this.menuOutsideClickListener();
     }

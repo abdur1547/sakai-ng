@@ -1,6 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, signal, effect, OnDestroy } from '@angular/core';
 import { ChartModule } from 'primeng/chart';
-import { debounceTime, Subscription } from 'rxjs';
 import { LayoutService } from '../../../layout/service/layout.service';
 
 @Component({
@@ -9,18 +8,18 @@ import { LayoutService } from '../../../layout/service/layout.service';
   imports: [ChartModule],
   template: `<div class="card mb-8!">
     <div class="font-semibold text-xl mb-4">Revenue Stream</div>
-    <p-chart type="bar" [data]="chartData" [options]="chartOptions" class="h-100" />
+    <p-chart type="bar" [data]="chartData()" [options]="chartOptions()" class="h-100" />
   </div>`
 })
-export class RevenueStreamWidget {
-  chartData: any;
-
-  chartOptions: any;
-
-  subscription!: Subscription;
+export class RevenueStreamWidget implements OnDestroy {
+  chartData = signal<any>(null);
+  chartOptions = signal<any>(null);
 
   constructor(public layoutService: LayoutService) {
-    this.subscription = this.layoutService.configUpdate$.pipe(debounceTime(25)).subscribe(() => {
+    // Use effect to reactively update charts when layout configuration changes
+    effect(() => {
+      // Access the layout config signal to trigger the effect
+      this.layoutService.layoutConfig();
       this.initChart();
     });
   }
@@ -29,13 +28,17 @@ export class RevenueStreamWidget {
     this.initChart();
   }
 
+  ngOnDestroy() {
+    // No need for manual subscription cleanup with signals
+  }
+
   initChart() {
     const documentStyle = getComputedStyle(document.documentElement);
     const textColor = documentStyle.getPropertyValue('--text-color');
     const borderColor = documentStyle.getPropertyValue('--surface-border');
     const textMutedColor = documentStyle.getPropertyValue('--text-color-secondary');
 
-    this.chartData = {
+    this.chartData.set({
       labels: ['Q1', 'Q2', 'Q3', 'Q4'],
       datasets: [
         {
@@ -67,9 +70,9 @@ export class RevenueStreamWidget {
           barThickness: 32
         }
       ]
-    };
+    });
 
-    this.chartOptions = {
+    this.chartOptions.set({
       maintainAspectRatio: false,
       aspectRatio: 0.8,
       plugins: {
@@ -102,12 +105,6 @@ export class RevenueStreamWidget {
           }
         }
       }
-    };
-  }
-
-  ngOnDestroy() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
+    });
   }
 }
