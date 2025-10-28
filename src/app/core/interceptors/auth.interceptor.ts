@@ -9,7 +9,6 @@ export class AuthInterceptor implements HttpInterceptor {
   private isRefreshing = false;
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Skip auth header for auth endpoints
     if (this.isAuthEndpoint(req.url)) {
       return next.handle(req);
     }
