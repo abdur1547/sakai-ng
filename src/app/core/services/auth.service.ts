@@ -32,10 +32,13 @@ export class AuthService extends BaseHttpService {
     );
   }
 
-  signup(credentials: SignupCredentials): Observable<User | null> {
-    return this.post<any>('/auth/signup', credentials).pipe(
-      tap((tokens) => this.tokenService.setTokens(tokens)),
-      switchMap(() => this.getCurrentUser())
+  signup(credentials: SignupCredentials): Observable<User> {
+    return this.post<LoginResponse>('/auth/signup', credentials).pipe(
+      map((response) => {
+        this.tokenService.setTokens({ access_token: response.access_token, refresh_token: response.refresh_token });
+        this.setUser(response.user);
+        return response.user;
+      })
     );
   }
 
