@@ -91,7 +91,7 @@ export class TokenService extends BaseHttpService implements OnDestroy {
           this.clearRefreshTimer();
         }
       });
-    }, 2000);
+    }, 30000);
   }
 
   clearRefreshTimer() {
