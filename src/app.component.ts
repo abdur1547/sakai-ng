@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { TokenService } from './app/core/services/token.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,10 @@ import { RouterModule } from '@angular/router';
   imports: [RouterModule],
   template: `<router-outlet></router-outlet>`
 })
-export class AppComponent {}
+export class AppComponent implements OnDestroy {
+  private tokenService = inject(TokenService);
+
+  ngOnDestroy(): void {
+    this.tokenService.clearRefreshTimer();
+  }
+}

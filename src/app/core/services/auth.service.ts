@@ -1,22 +1,19 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, map, of, switchMap, tap, throwError, timer } from 'rxjs';
+import { BehaviorSubject, Observable, map, switchMap, tap } from 'rxjs';
 import { BaseHttpService } from './base-http.service';
-import { AuthTokens, LoginCredentials, User } from '../interfaces/auth.interface';
+import { LoginCredentials, SignupCredentials, ResetPasswordRequest, ResetPasswordConfirm, ChangePasswordRequest, User, LoginResponse } from '../interfaces/auth.interface';
+import { TokenService } from './token.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService extends BaseHttpService {
   private router = inject(Router);
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
-  private readonly ACCESS_TOKEN_KEY = 'access_token';
+  private tokenService = inject(TokenService);
 
-  // Auth state
   private currentUserSubject = new BehaviorSubject<User | null>(null);
-  private refreshTokenTimeout?: any;
 
-  // Public observables
   readonly currentUser$ = this.currentUserSubject.asObservable();
   readonly isAuthenticated$ = this.currentUser$.pipe(map((user) => !!user));
 
@@ -26,72 +23,64 @@ export class AuthService extends BaseHttpService {
   }
 
   login(credentials: LoginCredentials): Observable<User> {
-    return this.post<AuthTokens>('auth/signin', credentials).pipe(
-      tap((tokens) => this.handleAuthTokens(tokens)),
+    return this.post<LoginResponse>('/auth/signin', credentials).pipe(
+      map((response) => {
+        this.tokenService.setTokens({ access_token: response.access_token, refresh_token: response.refresh_token });
+        this.setUser(response.user);
+        return response.user;
+      })
+    );
+  }
+
+  signup(credentials: SignupCredentials): Observable<User | null> {
+    return this.post<any>('/auth/signup', credentials).pipe(
+      tap((tokens) => this.tokenService.setTokens(tokens)),
       switchMap(() => this.getCurrentUser())
     );
   }
 
   logout(): void {
-    localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    this.post('/auth/logout', {}).subscribe({
+      complete: () => this.performLogout(),
+      error: () => this.performLogout()
+    });
+  }
+
+  requestPasswordReset(request: ResetPasswordRequest): Observable<any> {
+    return this.post('/auth/password-reset', request);
+  }
+
+  confirmPasswordReset(request: ResetPasswordConfirm): Observable<any> {
+    return this.post('/auth/password-reset/confirm', request);
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<any> {
+    return this.post('/auth/password-change', request);
+  }
+
+  getCurrentUser(): Observable<User | null> {
+    return this.currentUser$;
+  }
+
+  isAuthenticated(): boolean {
+    return this.tokenService.hasValidTokens() && !!this.currentUserSubject.value;
+  }
+
+  private performLogout(): void {
+    this.tokenService.clearTokens();
     this.currentUserSubject.next(null);
-    this.stopRefreshTokenTimer();
     this.router.navigate(['/auth/login']);
   }
 
-  refreshToken(): Observable<AuthTokens> {
-    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-    if (!refreshToken) {
-      return throwError(() => 'No refresh token available');
-    }
-
-    return this.post<AuthTokens>('auth/refresh', { refresh_token: refreshToken }).pipe(
-      tap((tokens) => this.handleAuthTokens(tokens)),
-      catchError((error) => {
-        this.logout();
-        return throwError(() => error);
-      })
-    );
-  }
-
-  getAccessToken(): string | null {
-    return localStorage.getItem(this.ACCESS_TOKEN_KEY);
-  }
-
-  private getCurrentUser(): Observable<User> {
-    return this.get<User>('auth/me').pipe(tap((user) => this.currentUserSubject.next(user)));
-  }
-
-  private handleAuthTokens(tokens: AuthTokens): void {
-    localStorage.setItem(this.ACCESS_TOKEN_KEY, tokens.access_token);
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, tokens.refresh_token);
-    this.startRefreshTokenTimer();
-  }
-
   private initializeAuth(): void {
-    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-    if (refreshToken) {
-      this.refreshToken()
-        .pipe(switchMap(() => this.getCurrentUser()))
-        .subscribe({
-          error: () => this.logout()
-        });
+    if (this.tokenService.hasValidTokens()) {
+      this.getCurrentUser().subscribe({
+        error: () => this.performLogout()
+      });
     }
   }
 
-  // Token refresh timer
-  private startRefreshTokenTimer(): void {
-    // Refresh 10 seconds before token expires
-    this.stopRefreshTokenTimer();
-    this.refreshTokenTimeout = setTimeout(() => {
-      this.refreshToken().subscribe();
-    }, 30000); // 30 seconds (40 - 10)
-  }
-
-  private stopRefreshTokenTimer(): void {
-    if (this.refreshTokenTimeout) {
-      clearTimeout(this.refreshTokenTimeout);
-    }
+  private setUser(user: User | null): void {
+    this.currentUserSubject.next(user);
   }
 }

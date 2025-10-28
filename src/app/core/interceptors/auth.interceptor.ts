@@ -1,43 +1,24 @@
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
+import { TokenService } from '../services/token.service';
 import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  private authService = inject(AuthService);
-  private isRefreshing = false;
+  private tokenService = inject(TokenService);
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Skip auth header for auth endpoints
     if (this.isAuthEndpoint(req.url)) {
       return next.handle(req);
     }
 
-    const accessToken = this.authService.getAccessToken();
+    const accessToken = this.tokenService.getAccessToken();
     if (accessToken) {
       req = this.addAuthHeader(req, accessToken);
+      return next.handle(req);
     }
-
-    return next.handle(req).pipe(
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 401 && !this.isRefreshing) {
-          this.isRefreshing = true;
-
-          return this.authService.refreshToken().pipe(
-            switchMap((tokens) => {
-              this.isRefreshing = false;
-              return next.handle(this.addAuthHeader(req, tokens.access_token));
-            }),
-            catchError((refreshError) => {
-              this.isRefreshing = false;
-              return throwError(() => refreshError);
-            })
-          );
-        }
-        return throwError(() => error);
-      })
-    );
+    return next.handle(req);
   }
 
   private addAuthHeader(req: HttpRequest<any>, token: string): HttpRequest<any> {
@@ -49,6 +30,6 @@ export class AuthInterceptor implements HttpInterceptor {
   }
 
   private isAuthEndpoint(url: string): boolean {
-    return url.endsWith('/auth/signin') || url.endsWith('/auth/refresh');
+    return url.endsWith('/auth/signin') || url.endsWith('/auth/signup');
   }
 }
