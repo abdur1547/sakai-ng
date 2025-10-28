@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, catchError, tap, throwError } from 'rxjs';
 import { BaseHttpService } from './base-http.service';
 import { AuthTokens } from '../interfaces/auth.interface';
@@ -6,7 +6,7 @@ import { AuthTokens } from '../interfaces/auth.interface';
 @Injectable({
   providedIn: 'root'
 })
-export class TokenService extends BaseHttpService {
+export class TokenService extends BaseHttpService implements OnDestroy {
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly ACCESS_TOKEN_KEY = 'access_token';
 
@@ -18,6 +18,10 @@ export class TokenService extends BaseHttpService {
   constructor() {
     super();
     this.initializeTokens();
+  }
+
+  ngOnDestroy(): void {
+    this.cleanup();
   }
 
   setTokens(tokens: AuthTokens): void {
@@ -59,6 +63,10 @@ export class TokenService extends BaseHttpService {
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     this.isTokenValidSubject.next(false);
+    this.stopRefreshTokenTimer();
+  }
+
+  cleanup(): void {
     this.stopRefreshTokenTimer();
   }
 
