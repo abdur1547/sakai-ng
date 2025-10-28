@@ -36,7 +36,7 @@
           <!-- Email Field -->
           <div class="mb-6">
             <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
-            <input pInputText id="email1" type="email" placeholder="Email address" formControlName="email" [class]="'w-full md:w-120 ' + (isFieldInvalid('email') ? 'ng-invalid ng-dirty' : '')" />
+            <input pInputText id="email1" name="email" type="email" placeholder="Email address" formControlName="email" autocomplete="email" [class]="'w-full md:w-120 ' + (isFieldInvalid('email') ? 'ng-invalid ng-dirty' : '')" />
             @if (isFieldInvalid('email')) {
             <small class="p-error block mt-1"> {{ getFieldErrorMessage('email') }} </small>
             }
@@ -45,7 +45,17 @@
           <!-- Password Field -->
           <div class="mb-4">
             <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-            <p-password id="password1" formControlName="password" placeholder="Password" [toggleMask]="true" [fluid]="true" [feedback]="false" [class]="isFieldInvalid('password') ? 'ng-invalid ng-dirty' : ''"></p-password>
+            <p-password
+              id="password1"
+              name="password"
+              formControlName="password"
+              placeholder="Password"
+              [toggleMask]="true"
+              [fluid]="true"
+              [feedback]="false"
+              autocomplete="current-password"
+              [class]="isFieldInvalid('password') ? 'ng-invalid ng-dirty' : ''"
+            ></p-password>
             @if (isFieldInvalid('password')) {
             <small class="p-error block mt-1"> {{ getFieldErrorMessage('password') }} </small>
             }
@@ -53,13 +63,20 @@
 
           <div class="flex items-center justify-between mt-2 mb-8 gap-8">
             <div class="flex items-center">
-              <p-checkbox formControlName="rememberMe" id="rememberme1" binary class="mr-2"></p-checkbox>
+              <p-checkbox formControlName="rememberMe" id="rememberme1" name="rememberMe" binary class="mr-2"></p-checkbox>
               <label for="rememberme1">Remember me</label>
             </div>
             <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span>
           </div>
 
           <p-button type="submit" label="Sign In" styleClass="w-full" [loading]="isLoading" [disabled]="loginForm.invalid"></p-button>
+
+          <div class="text-center mt-6">
+            <span class="text-sm text-muted-color">
+              Don't have an account?
+              <a routerLink="/auth/signup" class="font-medium text-primary hover:underline ml-1"> Create one here </a>
+            </span>
+          </div>
         </form>
       </div>
     </div>

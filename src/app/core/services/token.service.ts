@@ -79,7 +79,7 @@ export class TokenService extends BaseHttpService implements OnDestroy {
   startRefreshTokenTimer() {
     this.clearRefreshTimer();
 
-    this.refreshTimer = window.setInterval(() => {
+    this.refreshTimer = setInterval(() => {
       if (!this.hasValidTokens()) {
         this.clearRefreshTimer();
         return;
