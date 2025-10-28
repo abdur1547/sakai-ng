@@ -68,6 +68,11 @@ export class AppMenu {
                 routerLink: ['/auth/login']
               },
               {
+                label: 'Signup',
+                icon: 'pi pi-fw pi-user-plus',
+                routerLink: ['/auth/signup']
+              },
+              {
                 label: 'Error',
                 icon: 'pi pi-fw pi-times-circle',
                 routerLink: ['/auth/error']
