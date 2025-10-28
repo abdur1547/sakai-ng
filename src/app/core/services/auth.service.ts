@@ -12,11 +12,9 @@ export class AuthService extends BaseHttpService {
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly ACCESS_TOKEN_KEY = 'access_token';
 
-  // Auth state
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private refreshTokenTimeout?: any;
 
-  // Public observables
   readonly currentUser$ = this.currentUserSubject.asObservable();
   readonly isAuthenticated$ = this.currentUser$.pipe(map((user) => !!user));
 
