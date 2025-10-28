@@ -24,7 +24,7 @@ export class AuthService extends BaseHttpService {
   }
 
   login(credentials: LoginCredentials): Observable<User> {
-    return this.post<AuthTokens>('auth/signin', credentials).pipe(
+    return this.post<AuthTokens>('/auth/signin', credentials).pipe(
       tap((tokens) => this.handleAuthTokens(tokens)),
       switchMap(() => this.getCurrentUser())
     );
