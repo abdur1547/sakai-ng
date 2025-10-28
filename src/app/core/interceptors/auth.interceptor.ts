@@ -23,13 +23,13 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401 && !this.isRefreshing) {
           this.isRefreshing = true;
-          
+
           return this.authService.refreshToken().pipe(
-            switchMap(tokens => {
+            switchMap((tokens) => {
               this.isRefreshing = false;
               return next.handle(this.addAuthHeader(req, tokens.access_token));
             }),
-            catchError(refreshError => {
+            catchError((refreshError) => {
               this.isRefreshing = false;
               return throwError(() => refreshError);
             })

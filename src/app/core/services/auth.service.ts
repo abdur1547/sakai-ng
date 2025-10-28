@@ -11,14 +11,14 @@ export class AuthService extends BaseHttpService {
   private router = inject(Router);
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly ACCESS_TOKEN_KEY = 'access_token';
-  
+
   // Auth state
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private refreshTokenTimeout?: any;
 
   // Public observables
   readonly currentUser$ = this.currentUserSubject.asObservable();
-  readonly isAuthenticated$ = this.currentUser$.pipe(map(user => !!user));
+  readonly isAuthenticated$ = this.currentUser$.pipe(map((user) => !!user));
 
   constructor() {
     super();
@@ -27,7 +27,7 @@ export class AuthService extends BaseHttpService {
 
   login(credentials: LoginCredentials): Observable<User> {
     return this.post<AuthTokens>('auth/signin', credentials).pipe(
-      tap(tokens => this.handleAuthTokens(tokens)),
+      tap((tokens) => this.handleAuthTokens(tokens)),
       switchMap(() => this.getCurrentUser())
     );
   }
@@ -47,8 +47,8 @@ export class AuthService extends BaseHttpService {
     }
 
     return this.post<AuthTokens>('auth/refresh', { refresh_token: refreshToken }).pipe(
-      tap(tokens => this.handleAuthTokens(tokens)),
-      catchError(error => {
+      tap((tokens) => this.handleAuthTokens(tokens)),
+      catchError((error) => {
         this.logout();
         return throwError(() => error);
       })
@@ -60,9 +60,7 @@ export class AuthService extends BaseHttpService {
   }
 
   private getCurrentUser(): Observable<User> {
-    return this.get<User>('auth/me').pipe(
-      tap(user => this.currentUserSubject.next(user))
-    );
+    return this.get<User>('auth/me').pipe(tap((user) => this.currentUserSubject.next(user)));
   }
 
   private handleAuthTokens(tokens: AuthTokens): void {
@@ -74,11 +72,11 @@ export class AuthService extends BaseHttpService {
   private initializeAuth(): void {
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
     if (refreshToken) {
-      this.refreshToken().pipe(
-        switchMap(() => this.getCurrentUser())
-      ).subscribe({
-        error: () => this.logout()
-      });
+      this.refreshToken()
+        .pipe(switchMap(() => this.getCurrentUser()))
+        .subscribe({
+          error: () => this.logout()
+        });
     }
   }
 

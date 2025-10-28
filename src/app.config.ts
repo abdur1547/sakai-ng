@@ -8,15 +8,15 @@ import { appRoutes } from './app.routes';
 import { AuthInterceptor } from './app/core/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
-    providers: [
-        provideRouter(appRoutes, withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }), withEnabledBlockingInitialNavigation()),
-        provideHttpClient(withFetch()),
-        {
-            provide: HTTP_INTERCEPTORS,
-            useClass: AuthInterceptor,
-            multi: true
-        },
-        provideAnimationsAsync(),
-        providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } })
-    ]
+  providers: [
+    provideRouter(appRoutes, withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled' }), withEnabledBlockingInitialNavigation()),
+    provideHttpClient(withFetch()),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true
+    },
+    provideAnimationsAsync(),
+    providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } })
+  ]
 };
