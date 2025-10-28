@@ -58,7 +58,7 @@ interface ExportColumn {
     <p-toolbar styleClass="mb-6">
       <ng-template #start>
         <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
-        <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedProducts()" [disabled]="!selectedProducts || !selectedProducts.length" />
+        <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedProducts()" [disabled]="!selectedProducts() || !selectedProducts()?.length" />
       </ng-template>
 
       <ng-template #end>
@@ -70,11 +70,12 @@ interface ExportColumn {
       #dt
       [value]="products()"
       [rows]="10"
-      [columns]="cols"
+      [columns]="cols()"
       [paginator]="true"
       [globalFilterFields]="['name', 'country.name', 'representative.name', 'status']"
       [tableStyle]="{ 'min-width': '75rem' }"
-      [(selection)]="selectedProducts"
+      [selection]="selectedProducts()"
+      (selectionChange)="selectedProducts.set($event)"
       [rowHover]="true"
       dataKey="id"
       currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
@@ -146,46 +147,46 @@ interface ExportColumn {
       </ng-template>
     </p-table>
 
-    <p-dialog [(visible)]="productDialog" [style]="{ width: '450px' }" header="Product Details" [modal]="true">
+    <p-dialog [visible]="productDialog()" (visibleChange)="productDialog.set($event)" [style]="{ width: '450px' }" header="Product Details" [modal]="true">
       <ng-template #content>
         <div class="flex flex-col gap-6">
-          @if (product.image) {
-            <img [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + product.image" [alt]="product.image" class="block m-auto pb-4" />
+          @if (product().image) {
+            <img [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + product().image" [alt]="product().image" class="block m-auto pb-4" />
           }
           <div>
             <label for="name" class="block font-bold mb-3">Name</label>
-            <input type="text" pInputText id="name" [(ngModel)]="product.name" required autofocus fluid />
-            @if (submitted && !product.name) {
+            <input type="text" pInputText id="name" [ngModel]="product().name" (ngModelChange)="updateProductName($event)" required autofocus fluid />
+            @if (submitted() && !product().name) {
               <small class="text-red-500">Name is required.</small>
             }
           </div>
           <div>
             <label for="description" class="block font-bold mb-3">Description</label>
-            <textarea id="description" pTextarea [(ngModel)]="product.description" required rows="3" cols="20" fluid></textarea>
+            <textarea id="description" pTextarea [ngModel]="product().description" (ngModelChange)="updateProductDescription($event)" required rows="3" cols="20" fluid></textarea>
           </div>
 
           <div>
             <label for="inventoryStatus" class="block font-bold mb-3">Inventory Status</label>
-            <p-select [(ngModel)]="product.inventoryStatus" inputId="inventoryStatus" [options]="statuses" optionLabel="label" optionValue="label" placeholder="Select a Status" fluid />
+            <p-select [ngModel]="product().inventoryStatus" (ngModelChange)="updateProductInventoryStatus($event)" inputId="inventoryStatus" [options]="statuses()" optionLabel="label" optionValue="label" placeholder="Select a Status" fluid />
           </div>
 
           <div>
             <span class="block font-bold mb-4">Category</span>
             <div class="grid grid-cols-12 gap-4">
               <div class="flex items-center gap-2 col-span-6">
-                <p-radiobutton id="category1" name="category" value="Accessories" [(ngModel)]="product.category" />
+                <p-radiobutton id="category1" name="category" value="Accessories" [ngModel]="product().category" (ngModelChange)="updateProductCategory($event)" />
                 <label for="category1">Accessories</label>
               </div>
               <div class="flex items-center gap-2 col-span-6">
-                <p-radiobutton id="category2" name="category" value="Clothing" [(ngModel)]="product.category" />
+                <p-radiobutton id="category2" name="category" value="Clothing" [ngModel]="product().category" (ngModelChange)="updateProductCategory($event)" />
                 <label for="category2">Clothing</label>
               </div>
               <div class="flex items-center gap-2 col-span-6">
-                <p-radiobutton id="category3" name="category" value="Electronics" [(ngModel)]="product.category" />
+                <p-radiobutton id="category3" name="category" value="Electronics" [ngModel]="product().category" (ngModelChange)="updateProductCategory($event)" />
                 <label for="category3">Electronics</label>
               </div>
               <div class="flex items-center gap-2 col-span-6">
-                <p-radiobutton id="category4" name="category" value="Fitness" [(ngModel)]="product.category" />
+                <p-radiobutton id="category4" name="category" value="Fitness" [ngModel]="product().category" (ngModelChange)="updateProductCategory($event)" />
                 <label for="category4">Fitness</label>
               </div>
             </div>
@@ -194,11 +195,11 @@ interface ExportColumn {
           <div class="grid grid-cols-12 gap-4">
             <div class="col-span-6">
               <label for="price" class="block font-bold mb-3">Price</label>
-              <p-inputnumber id="price" [(ngModel)]="product.price" mode="currency" currency="USD" locale="en-US" fluid />
+              <p-inputnumber id="price" [ngModel]="product().price" (ngModelChange)="updateProductPrice($event)" mode="currency" currency="USD" locale="en-US" fluid />
             </div>
             <div class="col-span-6">
               <label for="quantity" class="block font-bold mb-3">Quantity</label>
-              <p-inputnumber id="quantity" [(ngModel)]="product.quantity" fluid />
+              <p-inputnumber id="quantity" [ngModel]="product().quantity" (ngModelChange)="updateProductQuantity($event)" fluid />
             </div>
           </div>
         </div>
@@ -215,23 +216,23 @@ interface ExportColumn {
   providers: [MessageService, ProductService, ConfirmationService]
 })
 export class Crud implements OnInit {
-  productDialog: boolean = false;
+  productDialog = signal<boolean>(false);
 
   products = signal<Product[]>([]);
 
-  product!: Product;
+  product = signal<Product>({});
 
-  selectedProducts!: Product[] | null;
+  selectedProducts = signal<Product[] | null>(null);
 
-  submitted: boolean = false;
+  submitted = signal<boolean>(false);
 
-  statuses!: any[];
+  statuses = signal<any[]>([]);
 
   @ViewChild('dt') dt!: Table;
 
-  exportColumns!: ExportColumn[];
+  exportColumns = signal<ExportColumn[]>([]);
 
-  cols!: Column[];
+  cols = signal<Column[]>([]);
 
   constructor(
     private productService: ProductService,
@@ -252,13 +253,13 @@ export class Crud implements OnInit {
       this.products.set(data);
     });
 
-    this.statuses = [
+    this.statuses.set([
       { label: 'INSTOCK', value: 'instock' },
       { label: 'LOWSTOCK', value: 'lowstock' },
       { label: 'OUTOFSTOCK', value: 'outofstock' }
-    ];
+    ]);
 
-    this.cols = [
+    const cols = [
       { field: 'code', header: 'Code', customExportHeader: 'Product Code' },
       { field: 'name', header: 'Name' },
       { field: 'image', header: 'Image' },
@@ -266,7 +267,8 @@ export class Crud implements OnInit {
       { field: 'category', header: 'Category' }
     ];
 
-    this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
+    this.cols.set(cols);
+    this.exportColumns.set(cols.map((col) => ({ title: col.header, dataKey: col.field })));
   }
 
   onGlobalFilter(table: Table, event: Event) {
@@ -274,14 +276,14 @@ export class Crud implements OnInit {
   }
 
   openNew() {
-    this.product = {};
-    this.submitted = false;
-    this.productDialog = true;
+    this.product.set({});
+    this.submitted.set(false);
+    this.productDialog.set(true);
   }
 
   editProduct(product: Product) {
-    this.product = { ...product };
-    this.productDialog = true;
+    this.product.set({ ...product });
+    this.productDialog.set(true);
   }
 
   deleteSelectedProducts() {
@@ -290,21 +292,24 @@ export class Crud implements OnInit {
       header: 'Confirm',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.products.set(this.products().filter((val) => !this.selectedProducts?.includes(val)));
-        this.selectedProducts = null;
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Successful',
-          detail: 'Products Deleted',
-          life: 3000
-        });
+        const selectedProducts = this.selectedProducts();
+        if (selectedProducts) {
+          this.products.set(this.products().filter((val) => !selectedProducts.includes(val)));
+          this.selectedProducts.set(null);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Successful',
+            detail: 'Products Deleted',
+            life: 3000
+          });
+        }
       }
     });
   }
 
   hideDialog() {
-    this.productDialog = false;
-    this.submitted = false;
+    this.productDialog.set(false);
+    this.submitted.set(false);
   }
 
   deleteProduct(product: Product) {
@@ -314,7 +319,7 @@ export class Crud implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.products.set(this.products().filter((val) => val.id !== product.id));
-        this.product = {};
+        this.product.set({});
         this.messageService.add({
           severity: 'success',
           summary: 'Successful',
@@ -359,12 +364,38 @@ export class Crud implements OnInit {
     }
   }
 
+  updateProductName(name: string) {
+    this.product.update((p) => ({ ...p, name }));
+  }
+
+  updateProductDescription(description: string) {
+    this.product.update((p) => ({ ...p, description }));
+  }
+
+  updateProductInventoryStatus(inventoryStatus: string) {
+    this.product.update((p) => ({ ...p, inventoryStatus }));
+  }
+
+  updateProductCategory(category: string) {
+    this.product.update((p) => ({ ...p, category }));
+  }
+
+  updateProductPrice(price: number) {
+    this.product.update((p) => ({ ...p, price }));
+  }
+
+  updateProductQuantity(quantity: number) {
+    this.product.update((p) => ({ ...p, quantity }));
+  }
+
   saveProduct() {
-    this.submitted = true;
+    this.submitted.set(true);
     let _products = this.products();
-    if (this.product.name?.trim()) {
-      if (this.product.id) {
-        _products[this.findIndexById(this.product.id)] = this.product;
+    const product = this.product();
+
+    if (product.name?.trim()) {
+      if (product.id) {
+        _products[this.findIndexById(product.id)] = product;
         this.products.set([..._products]);
         this.messageService.add({
           severity: 'success',
@@ -373,19 +404,18 @@ export class Crud implements OnInit {
           life: 3000
         });
       } else {
-        this.product.id = this.createId();
-        this.product.image = 'product-placeholder.svg';
+        const newProduct = { ...product, id: this.createId(), image: 'product-placeholder.svg' };
         this.messageService.add({
           severity: 'success',
           summary: 'Successful',
           detail: 'Product Created',
           life: 3000
         });
-        this.products.set([..._products, this.product]);
+        this.products.set([..._products, newProduct]);
       }
 
-      this.productDialog = false;
-      this.product = {};
+      this.productDialog.set(false);
+      this.product.set({});
     }
   }
 }

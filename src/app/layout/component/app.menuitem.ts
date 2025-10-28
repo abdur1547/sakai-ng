@@ -1,8 +1,9 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, HostBinding, Input, signal, effect, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { Subscription } from 'rxjs';
+
 import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { RippleModule } from 'primeng/ripple';
 import { MenuItem } from 'primeng/api';
@@ -80,7 +81,7 @@ import { LayoutService } from '../service/layout.service';
   ],
   providers: [LayoutService]
 })
-export class AppMenuitem {
+export class AppMenuitem implements OnDestroy {
   @Input() item!: MenuItem;
 
   @Input() index!: number;
@@ -89,13 +90,12 @@ export class AppMenuitem {
 
   @Input() parentKey!: string;
 
-  active = false;
-
-  menuSourceSubscription: Subscription;
-
-  menuResetSubscription: Subscription;
+  active = signal<boolean>(false);
 
   key: string = '';
+
+  menuSourceSubscription!: Subscription;
+  menuResetSubscription!: Subscription;
 
   constructor(
     public router: Router,
@@ -104,17 +104,17 @@ export class AppMenuitem {
     this.menuSourceSubscription = this.layoutService.menuSource$.subscribe((value) => {
       Promise.resolve(null).then(() => {
         if (value.routeEvent) {
-          this.active = value.key === this.key || value.key.startsWith(this.key + '-') ? true : false;
+          this.active.set(value.key === this.key || value.key.startsWith(this.key + '-') ? true : false);
         } else {
           if (value.key !== this.key && !value.key.startsWith(this.key + '-')) {
-            this.active = false;
+            this.active.set(false);
           }
         }
       });
     });
 
     this.menuResetSubscription = this.layoutService.resetSource$.subscribe(() => {
-      this.active = false;
+      this.active.set(false);
     });
 
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((params) => {
@@ -154,19 +154,19 @@ export class AppMenuitem {
 
     // toggle active state
     if (this.item.items) {
-      this.active = !this.active;
+      this.active.set(!this.active());
     }
 
     this.layoutService.onMenuStateChange({ key: this.key });
   }
 
   get submenuAnimation() {
-    return this.root ? 'expanded' : this.active ? 'expanded' : 'collapsed';
+    return this.root ? 'expanded' : this.active() ? 'expanded' : 'collapsed';
   }
 
   @HostBinding('class.active-menuitem')
   get activeClass() {
-    return this.active && !this.root;
+    return this.active() && !this.root;
   }
 
   ngOnDestroy() {

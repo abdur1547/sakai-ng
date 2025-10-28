@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -107,7 +107,7 @@ import { TextareaModule } from 'primeng/textarea';
         <div class="flex flex-col md:flex-row gap-6">
           <div class="flex flex-wrap gap-2 w-full">
             <label for="state">State</label>
-            <p-select id="state" [(ngModel)]="dropdownItem" [options]="dropdownItems" optionLabel="name" placeholder="Select One" class="w-full"></p-select>
+            <p-select id="state" [ngModel]="dropdownItem()" (ngModelChange)="dropdownItem.set($event)" [options]="dropdownItems()" optionLabel="name" placeholder="Select One" class="w-full"></p-select>
           </div>
           <div class="flex flex-wrap gap-2 w-full">
             <label for="zip">Zip</label>
@@ -119,11 +119,11 @@ import { TextareaModule } from 'primeng/textarea';
   </p-fluid>`
 })
 export class FormLayoutDemo {
-  dropdownItems = [
+  dropdownItems = signal([
     { name: 'Option 1', code: 'Option 1' },
     { name: 'Option 2', code: 'Option 2' },
     { name: 'Option 3', code: 'Option 3' }
-  ];
+  ]);
 
-  dropdownItem = null;
+  dropdownItem = signal<any>(null);
 }
