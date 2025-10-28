@@ -12,5 +12,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  // add other user fields as needed
+  uid: string;
+  avatar_url: string;
+  provider: string;
 }
