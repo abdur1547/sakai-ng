@@ -29,38 +29,38 @@ export class Signup {
       {
         name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
         email: ['', [Validators.required, Validators.email]],
-        password: ['', [Validators.required, Validators.minLength(8), this.passwordStrengthValidator]],
+        password: ['', [Validators.required, Validators.minLength(8)]],
         confirmPassword: ['', [Validators.required]]
-      },
-      { validators: this.passwordMatchValidator }
+      }
+      // { validators: this.passwordMatchValidator }
     );
   }
 
   // Custom validator for password strength
-  passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
-    const value = control.value;
-    if (!value) return null;
+  // passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
+  //   const value = control.value;
+  //   if (!value) return null;
 
-    const hasNumber = /[0-9]/.test(value);
-    const hasUpper = /[A-Z]/.test(value);
-    const hasLower = /[a-z]/.test(value);
-    const hasSpecial = /[#?!@$%^&*-]/.test(value);
+  //   const hasNumber = /[0-9]/.test(value);
+  //   const hasUpper = /[A-Z]/.test(value);
+  //   const hasLower = /[a-z]/.test(value);
+  //   const hasSpecial = /[#?!@$%^&*-]/.test(value);
 
-    const passwordValid = hasNumber && hasUpper && hasLower && hasSpecial;
+  //   const passwordValid = hasNumber && hasUpper && hasLower && hasSpecial;
 
-    if (!passwordValid) {
-      return {
-        passwordStrength: {
-          hasNumber,
-          hasUpper,
-          hasLower,
-          hasSpecial
-        }
-      };
-    }
+  //   if (!passwordValid) {
+  //     return {
+  //       passwordStrength: {
+  //         hasNumber,
+  //         hasUpper,
+  //         hasLower,
+  //         hasSpecial
+  //       }
+  //     };
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
   // Custom validator to check if passwords match
   passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
@@ -109,7 +109,7 @@ export class Signup {
         },
         error: (error) => {
           this.isLoading = false;
-          this.errorMessage = error?.error?.message || 'Signup failed. Please try again.';
+          this.errorMessage = error[0] || 'Signup failed. Please try again.';
         }
       });
     } else {
