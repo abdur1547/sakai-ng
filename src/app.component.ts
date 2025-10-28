@@ -12,6 +12,6 @@ export class AppComponent implements OnDestroy {
   private tokenService = inject(TokenService);
 
   ngOnDestroy(): void {
-    this.tokenService.cleanup();
+    this.tokenService.clearRefreshTimer();
   }
 }

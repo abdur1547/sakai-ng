@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, map, switchMap, tap } from 'rxjs';
 import { BaseHttpService } from './base-http.service';
-import { LoginCredentials, SignupCredentials, ResetPasswordRequest, ResetPasswordConfirm, ChangePasswordRequest, User } from '../interfaces/auth.interface';
+import { LoginCredentials, SignupCredentials, ResetPasswordRequest, ResetPasswordConfirm, ChangePasswordRequest, User, LoginResponse } from '../interfaces/auth.interface';
 import { TokenService } from './token.service';
 
 @Injectable({
@@ -23,13 +23,16 @@ export class AuthService extends BaseHttpService {
   }
 
   login(credentials: LoginCredentials): Observable<User> {
-    return this.post<any>('/auth/signin', credentials).pipe(
-      tap((tokens) => this.tokenService.setTokens(tokens)),
-      switchMap(() => this.getCurrentUser())
+    return this.post<LoginResponse>('/auth/signin', credentials).pipe(
+      map((response) => {
+        this.tokenService.setTokens({ access_token: response.access_token, refresh_token: response.refresh_token });
+        this.setUser(response.user);
+        return response.user;
+      })
     );
   }
 
-  signup(credentials: SignupCredentials): Observable<User> {
+  signup(credentials: SignupCredentials): Observable<User | null> {
     return this.post<any>('/auth/signup', credentials).pipe(
       tap((tokens) => this.tokenService.setTokens(tokens)),
       switchMap(() => this.getCurrentUser())
@@ -55,8 +58,8 @@ export class AuthService extends BaseHttpService {
     return this.post('/auth/password-change', request);
   }
 
-  getCurrentUser(): Observable<User> {
-    return this.get<User>('auth/me').pipe(tap((user) => this.currentUserSubject.next(user)));
+  getCurrentUser(): Observable<User | null> {
+    return this.currentUser$;
   }
 
   isAuthenticated(): boolean {
@@ -75,5 +78,9 @@ export class AuthService extends BaseHttpService {
         error: () => this.performLogout()
       });
     }
+  }
+
+  private setUser(user: User | null): void {
+    this.currentUserSubject.next(user);
   }
 }

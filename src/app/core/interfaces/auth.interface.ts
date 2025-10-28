@@ -3,6 +3,12 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface LoginResponse {
+  access_token: string;
+  refresh_token: string;
+  user: User;
+}
+
 export interface SignupCredentials {
   email: string;
   password: string;
@@ -29,6 +35,10 @@ export interface ChangePasswordRequest {
 export interface AuthTokens {
   access_token: string;
   refresh_token: string;
+}
+
+export interface RefreshTokens {
+  access_token: string;
 }
 
 export interface User {
