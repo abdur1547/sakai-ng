@@ -5,9 +5,17 @@
         "ng": "ng",
         "start": "ng serve",
         "build": "ng build",
+        "build:prod": "ng build --configuration=production",
         "watch": "ng build --watch --configuration development",
         "format": "prettier --write \"**/*.{js,mjs,ts,mts,d.ts,html}\" --cache",
-        "test": "ng test"
+        "test": "ng test",
+        "docker:build": "docker build -t sakai-ng:latest .",
+        "docker:build:dev": "docker build -f Dockerfile.dev -t sakai-ng:dev .",
+        "docker:start:prod": "./docker-deploy.sh start-prod",
+        "docker:start:dev": "./docker-deploy.sh start-dev",
+        "docker:stop": "./docker-deploy.sh stop",
+        "docker:logs": "./docker-deploy.sh logs",
+        "docker:cleanup": "./docker-deploy.sh cleanup"
     },
     "private": true,
     "dependencies": {

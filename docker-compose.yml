@@ -1,0 +1,46 @@
+services:
+  sakai-ng:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: sakai-ng-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+    networks:
+      - sakai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a reverse proxy like Traefik for load balancing
+  # traefik:
+  #   image: traefik:v3.0
+  #   container_name: traefik
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #     - "8080:8080"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - ./traefik:/etc/traefik
+  #   restart: unless-stopped
+  #   networks:
+  #     - sakai-network
+
+networks:
+  sakai-network:
+    driver: bridge
+
+volumes:
+  sakai-data:
+    driver: local
